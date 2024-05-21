@@ -31,7 +31,8 @@ func main() {
 	myBot.Bot.Debug = true
 
 	// myBot.SendMsgById(int64(config.TEST_BOT_CHAT), "Копия бота matchmaker_by_artisan_bot запущена.", myBot.Stage.StageName)
-	msg := tgbotapi.NewMessage(int64(config.TEST_BOT_CHAT), "Копия бота matchmaker_by_artisan_bot запущена.")
+	msg := tgbotapi.NewMessage(int64(config.TEST_BOT_CHAT), model.QuestionsList[0].Text)
+	msg.ReplyMarkup = model.QuestionsList[0].Markup
 	myBot.Bot.Send(msg)
 
 	u := tgbotapi.NewUpdate(0)
