@@ -1,6 +1,10 @@
 package model
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+import (
+	"matchmaking_bot/stl"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
 
 type User struct {
 	UserId      int64
@@ -52,6 +56,61 @@ func (us Users) FindUserByIdAndUpdateAlias(user_id int64, newAlias string) {
 			return
 		}
 	}
+}
+
+func (us Users) FindUserByIdAndAddAnswer(user_id int64, newAnswer string) {
+	for i, u := range us {
+		if u.UserId == user_id {
+			if !u.FindAnswer(newAnswer) {
+				u.Answers = append(u.Answers, newAnswer)
+				us[i] = u
+			}
+			return
+		}
+	}
+}
+
+func (us Users) FindUserByIdAndUpdateAnswer(user_id int64, oldAnswers []string, newAnswer string) {
+	for i, u := range us {
+		if u.UserId == user_id {
+			for _, oa := range oldAnswers {
+				index, ok := stl.IndexElemInSliseString(u.Answers, oa)
+				if !ok {
+					continue
+				}
+				u.Answers = stl.DeleteElementByIndex(u.Answers, index)
+			}
+			u.Answers = append(u.Answers, newAnswer)
+			us[i] = u
+			return
+		}
+	}
+}
+
+func (us Users) FindUserByIdSetGender(user_id int64, gender string) {
+	var genderInt int
+	if gender == "Юноша" {
+		genderInt = 1
+	} else {
+		genderInt = 0
+	}
+
+	for i, u := range us {
+		if u.UserId == user_id {
+			u.Gender = genderInt
+			us[i] = u
+			return
+		}
+	}
+}
+
+func (u User) FindAnswer(answer string) bool {
+	for _, a := range u.Answers {
+		if a == answer {
+			return true
+		}
+	}
+	return false
 }
 
 type Role struct {

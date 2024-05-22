@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"matchmaking_bot/config"
 	"matchmaking_bot/model"
@@ -48,7 +49,7 @@ func main() {
 					}
 					myBot.SendMsgById(update.Message.From.ID, "Отлично, как бы ты себя не назвал, "+update.Message.Text+", таким тебя будет видеть собеседник. У тебя есть ещё пара минут подумать и изменить псевдоним, просто отправь мне сообщение.")
 				default:
-					myBot.SendMsgById(update.Message.From.ID, "Проше прощения, пока мне нечего на это ответить.")
+					myBot.SendMsgById(update.Message.From.ID, "Прошу прощения, пока мне нечего на это ответить.")
 				}
 			} else {
 				switch update.Message.Command() {
@@ -57,7 +58,7 @@ func main() {
 						myBot.SendMsgById(update.Message.From.ID, "Привет, настало время придумать себе псевдоним.")
 						continue
 					}
-					myBot.SendMsgById(update.Message.From.ID, "Проше прощения, пока мне нечего на это ответить.")
+					myBot.SendMsgById(update.Message.From.ID, "Прошу прощения, пока мне нечего на это ответить.")
 				}
 			}
 		}
@@ -74,10 +75,15 @@ func main() {
 			} else {
 				switch update.ChannelPost.Command() {
 				case "help":
+					fallthrough
+				case "h":
 					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Здеь будет подсказка для модераторов")
 					continue
 
 				case "stage_up":
+					fallthrough
+				case "su":
+
 					myBot.Stage, err = myBot.Stage.Up()
 					if err != nil {
 						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), myBot.Stage.StageName)
@@ -88,6 +94,8 @@ func main() {
 					continue
 
 				case "stage_down":
+					fallthrough
+				case "sd":
 					myBot.Stage, err = myBot.Stage.Down()
 					if err != nil {
 						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), myBot.Stage.StageName)
@@ -98,15 +106,20 @@ func main() {
 					continue
 
 				case "question_next":
+					fallthrough
+				case "qn":
+
 					model.BotQuestions, err = model.BotQuestions.Next()
 					if err != nil {
 						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), model.BotQuestions.GetCurentQuestion().Text)
 						continue
 					}
-					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Следующий вопрос звучит так.", model.BotQuestions.GetCurentQuestion().Text, strconv.FormatBool(model.BotQuestions.GetCurentQuestion().MustMatch))
+					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Следующий вопрос звучит так.", model.BotQuestions.GetCurentQuestion().Text)
 					continue
 
 				case "question_back":
+					fallthrough
+				case "qb":
 					model.BotQuestions, err = model.BotQuestions.Back()
 					if err != nil {
 						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), model.BotQuestions.GetCurentQuestion().Text)
@@ -116,12 +129,13 @@ func main() {
 					continue
 
 				case "send_question":
+					fallthrough
+				case "sq":
 					if myBot.Stage.StageType == 2 {
 						for _, user := range config.CUSTOMERS {
 							myBot.SendMsgWithInleneKeyboardById(
 								user.UserChat_id,
 								model.BotQuestions.GetCurentQuestion().Markup,
-								strconv.Itoa(model.BotQuestions.GetQuestionsCounter()),
 								model.BotQuestions.GetCurentQuestion().Text)
 							myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Пользователю: "+user.UserLogin+", он же "+user.UserAlias, "Отправлен вопрос.", model.BotQuestions.GetCurentQuestion().Text)
 						}
@@ -132,8 +146,37 @@ func main() {
 							strconv.Itoa(model.BotQuestions.GetQuestionsCounter()),
 							model.BotQuestions.GetCurentQuestion().Text)
 					}
-
 					continue
+				}
+			}
+		}
+
+		if update.CallbackQuery != nil {
+			if myBot.Stage.StageType == 2 {
+				if config.CUSTOMERS.IsExistUserById(update.CallbackQuery.From.ID) {
+					switch {
+					case model.BotQuestions.QuestionsList.IsExistQuestionOptionsByName(update.CallbackQuery.Message.Text, "gender"):
+						config.CUSTOMERS.FindUserByIdSetGender(update.CallbackQuery.From.ID, update.CallbackQuery.Data)
+						myBot.SendMsgById(update.CallbackQuery.From.ID, "Отлично, теперь мы знаем какого ты поля.")
+						myBot.SendMsgById(update.CallbackQuery.From.ID, config.CUSTOMERS.FindUserById(update.CallbackQuery.From.ID).Answers...)
+						continue
+
+					case model.BotQuestions.QuestionsList.IsExistQuestionOptionsByName(update.CallbackQuery.Message.Text, "onlyOne"):
+						fmt.Println(model.BotQuestions.QuestionsList.GetAnswersByQuestionName(update.CallbackQuery.Message.Text))
+						config.CUSTOMERS.FindUserByIdAndUpdateAnswer(
+							update.CallbackQuery.From.ID,
+							model.BotQuestions.QuestionsList.GetAnswersByQuestionName(update.CallbackQuery.Message.Text),
+							update.CallbackQuery.Data)
+						myBot.SendMsgById(update.CallbackQuery.From.ID, "Отлично, Можешь изменить ответ если хочешь.")
+						myBot.SendMsgById(update.CallbackQuery.From.ID, config.CUSTOMERS.FindUserById(update.CallbackQuery.From.ID).Answers...)
+						continue
+
+					default:
+						config.CUSTOMERS.FindUserByIdAndAddAnswer(update.CallbackQuery.From.ID, update.CallbackQuery.Data)
+						myBot.SendMsgById(update.CallbackQuery.From.ID, "Отлично, На этот вопрос можно ответить несколько раз, Выбирай хоть все варианты.")
+						myBot.SendMsgById(update.CallbackQuery.From.ID, config.CUSTOMERS.FindUserById(update.CallbackQuery.From.ID).Answers...)
+						continue
+					}
 				}
 			}
 		}
