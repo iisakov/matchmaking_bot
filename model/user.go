@@ -8,6 +8,8 @@ type User struct {
 	UserRole    Role
 	UserLogin   string
 	UserAlias   string
+	Answers     []string
+	Gender      int
 }
 
 func NewUser(update tgbotapi.Update) User {

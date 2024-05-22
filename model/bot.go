@@ -15,12 +15,22 @@ func NewTgBot(bot *tgbotapi.BotAPI) TgBot {
 	return TgBot{Bot: bot, Stage: BotStage{StageName: "Настройка системы", StageType: 0}}
 }
 
-func (tgb TgBot) SendMsgById(chat_id int64, msgText ...string) {
+func (tgb TgBot) SendMsgById(chatId int64, msgText ...string) {
 	text := ""
 	for _, t := range msgText {
 		text = text + "\n" + t
 	}
-	msg := tgbotapi.NewMessage(chat_id, text)
+	msg := tgbotapi.NewMessage(chatId, text)
+	tgb.Bot.Send(msg)
+}
+
+func (tgb TgBot) SendMsgWithInleneKeyboardById(chatId int64, inleneKeyboard tgbotapi.InlineKeyboardMarkup, msgText ...string) {
+	text := ""
+	for _, t := range msgText {
+		text = text + "\n" + t
+	}
+	msg := tgbotapi.NewMessage(chatId, text)
+	msg.ReplyMarkup = inleneKeyboard
 	tgb.Bot.Send(msg)
 }
 
