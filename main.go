@@ -22,6 +22,7 @@ func init() {
 }
 
 func main() {
+	config.CUSTOMERS = config.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
 
 	bot, err := tgbotapi.NewBotAPI(config.TOKEN)
 	if err != nil {
@@ -80,17 +81,28 @@ func main() {
 					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Здеь будет подсказка для модераторов")
 					continue
 
+				case "chack_stages_text":
+					fallthrough
+				case "cst":
+					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
+					continue
+
+				case "send_stages_text":
+					fallthrough
+				case "sst":
+					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
+					myBot.SendMsgById(int64(config.TEST_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
+					continue
+
 				case "stage_up":
 					fallthrough
 				case "su":
-
 					myBot.Stage, err = myBot.Stage.Up()
 					if err != nil {
-						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), myBot.Stage.StageName)
+						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), myBot.Stage.StageName, strconv.Itoa(myBot.Stage.StageType))
 						continue
 					}
-					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Мы перешли на следущий этап.", myBot.Stage.StageName)
-					myBot.SendMsgById(int64(config.TEST_BOT_CHAT), "Мы перешли на следущий этап.", myBot.Stage.StageName)
+					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Мы перешли на следущий этап.", myBot.Stage.StageName, strconv.Itoa(myBot.Stage.StageType))
 					continue
 
 				case "stage_down":
@@ -98,11 +110,10 @@ func main() {
 				case "sd":
 					myBot.Stage, err = myBot.Stage.Down()
 					if err != nil {
-						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), myBot.Stage.StageName)
+						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), myBot.Stage.StageName, strconv.Itoa(myBot.Stage.StageType))
 						continue
 					}
-					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Мы вернулись на предыдущий этап.", myBot.Stage.StageName)
-					myBot.SendMsgById(int64(config.TEST_BOT_CHAT), "Мы вернулись на предыдущий этап.", myBot.Stage.StageName)
+					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Мы вернулись на предыдущий этап.", myBot.Stage.StageName, strconv.Itoa(myBot.Stage.StageType))
 					continue
 
 				case "question_next":
@@ -146,6 +157,45 @@ func main() {
 							strconv.Itoa(model.BotQuestions.GetQuestionsCounter()),
 							model.BotQuestions.GetCurentQuestion().Text)
 					}
+					continue
+
+				case "create_pair":
+					fallthrough
+				case "cp":
+					config.PAIRS = model.CheckCompatibility(config.CUSTOMERS.GetUsersByGender(1), config.CUSTOMERS.GetUsersByGender(0))
+					myBot.SendMsgById(
+						int64(config.MODERATOR_BOT_CHAT),
+						"Создали пары:",
+						config.PAIRS.GetPairs(),
+					)
+					continue
+
+				case "get_pair":
+					fallthrough
+				case "gp":
+					myBot.SendMsgById(
+						int64(config.MODERATOR_BOT_CHAT),
+						config.PAIRS.GetPairs(),
+					)
+
+					continue
+
+				case "get_users":
+					fallthrough
+				case "gus":
+					if len(config.CUSTOMERS) > 0 {
+						myBot.SendMsgById(
+							int64(config.MODERATOR_BOT_CHAT),
+							config.CUSTOMERS.GetUsersByGender(1).GetUsers(),
+							config.CUSTOMERS.GetUsersByGender(0).GetUsers(),
+						)
+					} else {
+						myBot.SendMsgById(
+							int64(config.MODERATOR_BOT_CHAT),
+							"Нет зарегистрированных пользователей.",
+						)
+					}
+
 					continue
 				}
 			}

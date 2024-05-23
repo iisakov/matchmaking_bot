@@ -1,7 +1,9 @@
 package model
 
 import (
+	"errors"
 	"matchmaking_bot/stl"
+	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -26,8 +28,27 @@ func NewUser(update tgbotapi.Update) User {
 
 type Users []User
 
-type UsersInterface interface {
-	IsExistUserById(user_id int64) bool
+func (us Users) GetUsers() (result string) {
+	result = ""
+	for _, u := range us {
+		result += strconv.Itoa(u.Gender) + " "
+		result += u.UserLogin + " (" + u.UserAlias + "): "
+		for _, a := range u.Answers {
+			result += a + ", "
+		}
+		result += "\n"
+	}
+	return result
+}
+
+func (us Users) GetUsersByGender(gender int) (result Users) {
+	for _, u := range us {
+		if u.Gender == gender {
+			result = append(result, u)
+		}
+	}
+
+	return
 }
 
 func (us Users) IsExistUserById(user_id int64) bool {
@@ -119,5 +140,92 @@ type Role struct {
 }
 
 type Pair struct {
-	PairUsers []User
+	NumMatches int
+	PairUsers  Users
+}
+
+func (p Pair) GetIdUsers() (result [2]int64) {
+	return [2]int64{p.PairUsers[0].UserChat_id, p.PairUsers[1].UserChat_id}
+}
+
+func NewPair(us Users, nm int) (Pair, error) {
+	if len(us) == 2 {
+		return Pair{PairUsers: us, NumMatches: nm}, nil
+	}
+	return Pair{}, errors.New("слишком много элементов")
+}
+
+func IsExistUserInPairs(pairs Pairs, user User) bool {
+	for _, pair := range pairs {
+		for _, uId := range pair.GetIdUsers() {
+			if uId == user.UserChat_id {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+type Pairs []Pair
+
+func (ps Pairs) GetPairs() string {
+	result := ""
+	for _, p := range ps {
+		result += "совпадений: " + strconv.Itoa(p.NumMatches) + "\n"
+
+		result += strconv.Itoa(p.PairUsers[0].Gender) + " "
+		result += p.PairUsers[0].UserLogin + " (" + p.PairUsers[0].UserAlias + "): "
+		for _, a := range p.PairUsers[0].Answers {
+			result += a + ", "
+		}
+		result += "\n"
+
+		result += strconv.Itoa(p.PairUsers[1].Gender) + " "
+		result += p.PairUsers[1].UserLogin + " (" + p.PairUsers[1].UserAlias + "): "
+		for _, a := range p.PairUsers[1].Answers {
+			result += a + ", "
+		}
+
+		result += "\n"
+		result += "\n"
+	}
+	return result
+}
+
+func CheckCompatibility(sU1, sU2 Users) (result Pairs) {
+	var biggerS, smallerS Users
+	var maxMatches = 0
+	var subResult = make(map[int][]Users)
+	if len(sU1) > len(sU2) {
+		biggerS = sU1
+		smallerS = sU2
+	} else {
+		biggerS = sU2
+		smallerS = sU1
+	}
+
+	for _, vS := range smallerS {
+		for _, vB := range biggerS {
+			numMatches := stl.GetNumberMatches(vS.Answers, vB.Answers)
+			if maxMatches < numMatches {
+				maxMatches = numMatches
+			}
+
+			if _, ok := subResult[numMatches]; !ok {
+				subResult[numMatches] = []Users{}
+			}
+			subResult[numMatches] = append(subResult[numMatches], Users{vS, vB})
+		}
+	}
+
+	for i := maxMatches; i >= 0; i-- {
+		for _, subPair := range subResult[i] {
+			if IsExistUserInPairs(result, subPair[0]) || IsExistUserInPairs(result, subPair[1]) {
+				continue
+			}
+			np, _ := NewPair(subPair, i)
+			result = append(result, np)
+		}
+	}
+	return
 }
