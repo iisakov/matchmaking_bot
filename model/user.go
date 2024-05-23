@@ -172,7 +172,12 @@ func (ps Pairs) GetConversationPartner(uId int64) (result int64, ok bool) {
 	for _, p := range ps {
 		for i, pUId := range p.GetIdUsers() {
 			if pUId == uId {
-				return p.GetIdUsers()[i%2], true
+				if i == 0 {
+					return p.GetIdUsers()[1], true
+				} else {
+					return p.GetIdUsers()[0], true
+				}
+
 			}
 		}
 	}

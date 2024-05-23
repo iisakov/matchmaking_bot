@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"matchmaking_bot/config"
-	"matchmaking_bot/mock"
 	"matchmaking_bot/model"
 	"os"
 	"strconv"
@@ -23,8 +22,8 @@ func init() {
 }
 
 func main() {
-	config.CUSTOMERS = mock.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
-	config.PAIRS = mock.MockPairs(config.PAIRS)         // моковые пары для проверки
+	// config.CUSTOMERS = mock.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
+	// config.PAIRS = mock.MockPairs(config.PAIRS)         // моковые пары для проверки
 
 	bot, err := tgbotapi.NewBotAPI(config.TOKEN)
 	if err != nil {
@@ -58,7 +57,7 @@ func main() {
 					}
 					myBot.SendMsgById(
 						conversationPartnerId,
-						"Сообщение от "+config.CUSTOMERS.FindUserById(conversationPartnerId).UserAlias+":",
+						"Сообщение от "+config.CUSTOMERS.FindUserById(update.Message.From.ID).UserAlias+":",
 						update.Message.Text)
 				default:
 					myBot.SendMsgById(update.Message.From.ID, "Прошу прощения, пока мне нечего на это ответить.")
@@ -79,9 +78,9 @@ func main() {
 		if update.ChannelPost != nil {
 			if !update.ChannelPost.IsCommand() {
 				if update.ChannelPost.SenderChat.ID == int64(config.MODERATOR_BOT_CHAT) {
+					myBot.SendMsgById(int64(config.PUBLIC_BOT_CHAT), "Сообщение от команды [by_artisan]:", update.ChannelPost.Text)
 					for _, user := range config.CUSTOMERS {
 						myBot.SendMsgById(int64(user.UserChat_id), "Сообщение от команды [by_artisan]:", update.ChannelPost.Text)
-						myBot.SendMsgById(int64(config.PUBLIC_BOT_CHAT), "Сообщение от команды [by_artisan]:", update.ChannelPost.Text)
 						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Пользователю: "+user.UserLogin+", он же "+user.UserAlias, "Отправлено сообщение")
 					}
 				}
