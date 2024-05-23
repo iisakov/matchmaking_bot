@@ -168,6 +168,17 @@ func IsExistUserInPairs(pairs Pairs, user User) bool {
 
 type Pairs []Pair
 
+func (ps Pairs) GetConversationPartner(uId int64) (result int64, ok bool) {
+	for _, p := range ps {
+		for i, pUId := range p.GetIdUsers() {
+			if pUId == uId {
+				return p.GetIdUsers()[i%2], true
+			}
+		}
+	}
+	return -1, false
+}
+
 func (ps Pairs) GetPairs() string {
 	result := ""
 	for _, p := range ps {

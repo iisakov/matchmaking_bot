@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"matchmaking_bot/config"
+	"matchmaking_bot/mock"
 	"matchmaking_bot/model"
 	"os"
 	"strconv"
@@ -17,12 +18,13 @@ func init() {
 		log.Fatal("Не найден файл .env")
 	}
 	config.TOKEN = os.Getenv("MATCHMAKER_BOT_TOKEN")
-	config.TEST_BOT_CHAT, _ = strconv.Atoi(os.Getenv("TEST_BOT_CHAT"))
+	config.PUBLIC_BOT_CHAT, _ = strconv.Atoi(os.Getenv("PUBLIC_BOT_CHAT"))
 	config.MODERATOR_BOT_CHAT, _ = strconv.Atoi(os.Getenv("MODERATOR_BOT_CHAT"))
 }
 
 func main() {
-	config.CUSTOMERS = config.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
+	config.CUSTOMERS = mock.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
+	config.PAIRS = mock.MockPairs(config.PAIRS)         // моковые пары для проверки
 
 	bot, err := tgbotapi.NewBotAPI(config.TOKEN)
 	if err != nil {
@@ -49,6 +51,15 @@ func main() {
 						config.CUSTOMERS.FindUserByIdAndUpdateAlias(update.Message.From.ID, update.Message.Text)
 					}
 					myBot.SendMsgById(update.Message.From.ID, "Отлично, как бы ты себя не назвал, "+update.Message.Text+", таким тебя будет видеть собеседник. У тебя есть ещё пара минут подумать и изменить псевдоним, просто отправь мне сообщение.")
+				case 4: // Общение в парах
+					conversationPartnerId, ok := config.PAIRS.GetConversationPartner(update.Message.From.ID)
+					if !ok {
+						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Так вышло, что кому-то не досталась пара")
+					}
+					myBot.SendMsgById(
+						conversationPartnerId,
+						"Сообщение от "+config.CUSTOMERS.FindUserById(conversationPartnerId).UserAlias+":",
+						update.Message.Text)
 				default:
 					myBot.SendMsgById(update.Message.From.ID, "Прошу прощения, пока мне нечего на это ответить.")
 				}
@@ -69,7 +80,8 @@ func main() {
 			if !update.ChannelPost.IsCommand() {
 				if update.ChannelPost.SenderChat.ID == int64(config.MODERATOR_BOT_CHAT) {
 					for _, user := range config.CUSTOMERS {
-						myBot.SendMsgById(int64(user.UserChat_id), "Команда [by_artisan]:", update.ChannelPost.Text)
+						myBot.SendMsgById(int64(user.UserChat_id), "Сообщение от команды [by_artisan]:", update.ChannelPost.Text)
+						myBot.SendMsgById(int64(config.PUBLIC_BOT_CHAT), "Сообщение от команды [by_artisan]:", update.ChannelPost.Text)
 						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Пользователю: "+user.UserLogin+", он же "+user.UserAlias, "Отправлено сообщение")
 					}
 				}
@@ -91,12 +103,20 @@ func main() {
 					fallthrough
 				case "sst":
 					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
-					myBot.SendMsgById(int64(config.TEST_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
+					myBot.SendMsgById(int64(config.PUBLIC_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
 					continue
 
 				case "stage_up":
 					fallthrough
 				case "su":
+					if myBot.Stage.StageType+1 == 4 && len(config.PAIRS) < 1 {
+						myBot.SendMsgById(
+							int64(config.MODERATOR_BOT_CHAT),
+							"Нельзя переходить к следующему этапу",
+							"Распределённых пар:"+strconv.Itoa(len(config.PAIRS)),
+						)
+						continue
+					}
 					myBot.Stage, err = myBot.Stage.Up()
 					if err != nil {
 						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), err.Error(), myBot.Stage.StageName, strconv.Itoa(myBot.Stage.StageType))
