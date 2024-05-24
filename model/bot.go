@@ -1,10 +1,18 @@
 package model
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+var tgHostUrl = "https://api.telegram.org/bot"
 
 type TgBot struct {
 	Bot   *tgbotapi.BotAPI
@@ -32,6 +40,52 @@ func (tgb TgBot) SendMsgWithInleneKeyboardById(chatId int64, inleneKeyboard tgbo
 	msg := tgbotapi.NewMessage(chatId, text)
 	msg.ReplyMarkup = inleneKeyboard
 	tgb.Bot.Send(msg)
+}
+
+func (tgb TgBot) DeleteMessegeById(chat_id, message_id int) (resp *http.Response, err error) {
+	type DM struct {
+		Chat_id    int `json:"chat_id"`
+		Message_id int `json:"message_id"`
+	}
+
+	data, err := json.Marshal(DM{Chat_id: chat_id, Message_id: message_id})
+	if err != nil {
+		return
+	}
+
+	r := bytes.NewReader(data)
+	resp, err = http.Post(tgHostUrl+tgb.Bot.Token+"/deleteMessage", "application/json", r)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (tgb TgBot) DeleteMessegeByIds(chat_id int, message_ids []int) (result string, err error) {
+	type DM struct {
+		Chat_id     int   `json:"chat_id"`
+		Message_ids []int `json:"message_ids"`
+	}
+	fmt.Println(message_ids)
+	data, err := json.Marshal(DM{Chat_id: chat_id, Message_ids: message_ids})
+	if err != nil {
+		return
+	}
+
+	r := bytes.NewReader(data)
+	resp, err := http.Post(tgHostUrl+tgb.Bot.Token+"/deleteMessages", "application/json", r)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	result = string(bodyBytes)
+
+	return
 }
 
 type BotStage struct {
