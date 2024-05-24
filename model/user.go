@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"matchmaking_bot/stl"
 	"strconv"
 
@@ -9,13 +10,14 @@ import (
 )
 
 type User struct {
-	UserId      int64
-	UserChat_id int64
-	UserRole    Role
-	UserLogin   string
-	UserAlias   string
-	Answers     []string
-	Gender      int
+	UserId        int64
+	UserChat_id   int64
+	UserRole      Role
+	UserLogin     string
+	UserAlias     string
+	Answers       []string
+	Gender        int
+	LastMessageId int
 }
 
 func NewUser(update tgbotapi.Update) User {
@@ -36,6 +38,7 @@ func (us Users) GetUsers() (result string) {
 		for _, a := range u.Answers {
 			result += a + ", "
 		}
+		result += fmt.Sprintf("lust_message_id: %d", u.LastMessageId)
 		result += "\n"
 	}
 	return result
@@ -119,6 +122,16 @@ func (us Users) FindUserByIdSetGender(user_id int64, gender string) {
 	for i, u := range us {
 		if u.UserId == user_id {
 			u.Gender = genderInt
+			us[i] = u
+			return
+		}
+	}
+}
+
+func (us Users) FindUserByIdAndSetLastMessageId(user_id int64, message_id int) {
+	for i, u := range us {
+		if u.UserId == user_id {
+			u.LastMessageId = message_id
 			us[i] = u
 			return
 		}

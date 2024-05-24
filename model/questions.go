@@ -103,11 +103,12 @@ var RowQuestion = map[string]map[string][]string{
 
 func CreateQuestions(rowQuestion map[string]map[string][]string) (result QuestionsList) {
 	for questionText, answerValue := range rowQuestion {
-		buttons := []tgbotapi.InlineKeyboardButton{}
+		var rows [][]tgbotapi.InlineKeyboardButton
+
 		for _, a := range answerValue["answers"] {
-			buttons = append(buttons, tgbotapi.NewInlineKeyboardButtonData(a, a))
+			rows = append(rows, tgbotapi.NewInlineKeyboardRow(tgbotapi.NewInlineKeyboardButtonData(a, a)))
 		}
-		keyboardMarkup := tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(buttons...))
+		keyboardMarkup := tgbotapi.NewInlineKeyboardMarkup(rows...)
 		result = append(result, Question{Text: questionText, Markup: keyboardMarkup, Options: answerValue["options"]})
 	}
 	return

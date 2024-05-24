@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log"
 	"matchmaking_bot/config"
+	"matchmaking_bot/mock"
 	"matchmaking_bot/model"
+	"matchmaking_bot/stl"
 	"os"
 	"strconv"
 
@@ -22,7 +24,7 @@ func init() {
 }
 
 func main() {
-	// config.CUSTOMERS = mock.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
+	config.CUSTOMERS = mock.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
 	// config.PAIRS = mock.MockPairs(config.PAIRS)         // моковые пары для проверки
 
 	bot, err := tgbotapi.NewBotAPI(config.TOKEN)
@@ -31,7 +33,7 @@ func main() {
 	}
 	myBot := model.NewTgBot(bot)
 
-	myBot.Bot.Debug = true
+	myBot.Bot.Debug = false
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -49,29 +51,37 @@ func main() {
 					} else {
 						config.CUSTOMERS.FindUserByIdAndUpdateAlias(update.Message.From.ID, update.Message.Text)
 					}
+					myBot.DeleteMessegeByIds(update.Message.From.ID, stl.CreateSliceInt(update.Message.MessageID-100, update.Message.MessageID))
 					myBot.SendMsgById(update.Message.From.ID, "Отлично, как бы ты себя не назвал, "+update.Message.Text+", таким тебя будет видеть собеседник. У тебя есть ещё пара минут подумать и изменить псевдоним, просто отправь мне сообщение.")
 				case 4: // Общение в парах
 					conversationPartnerId, ok := config.PAIRS.GetConversationPartner(update.Message.From.ID)
 					if !ok {
-						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), "Так вышло, что кому-то не досталась пара")
+						myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), fmt.Sprintf("Так вышло, что кому-то не досталась пара: %s", config.CUSTOMERS.FindUserById(update.Message.From.ID).UserLogin))
 					}
 					myBot.SendMsgById(
 						conversationPartnerId,
 						"Сообщение от "+config.CUSTOMERS.FindUserById(update.Message.From.ID).UserAlias+":",
 						update.Message.Text)
 				default:
+					myBot.DeleteMessegeByIds(update.Message.From.ID, stl.CreateSliceInt(update.Message.MessageID-100, update.Message.MessageID))
 					myBot.SendMsgById(update.Message.From.ID, "Прошу прощения, пока мне нечего на это ответить.")
 				}
 			} else {
 				switch update.Message.Command() {
 				case "start":
 					if myBot.Stage.StageType == 1 {
+						myBot.DeleteMessegeByIds(update.Message.From.ID, stl.CreateSliceInt(update.Message.MessageID-100, update.Message.MessageID))
 						myBot.SendMsgById(update.Message.From.ID, "Привет, настало время придумать себе псевдоним.")
 						continue
 					}
+					myBot.DeleteMessegeByIds(update.Message.From.ID, stl.CreateSliceInt(update.Message.MessageID-100, update.Message.MessageID))
+					myBot.SendMsgById(update.Message.From.ID, "Прошу прощения, пока мне нечего на это ответить.")
+				default:
+					myBot.DeleteMessegeByIds(update.Message.From.ID, stl.CreateSliceInt(update.Message.MessageID-100, update.Message.MessageID))
 					myBot.SendMsgById(update.Message.From.ID, "Прошу прощения, пока мне нечего на это ответить.")
 				}
 			}
+			config.CUSTOMERS.FindUserByIdAndSetLastMessageId(update.Message.From.ID, update.Message.MessageID)
 		}
 
 		// Сообщения от Модераторов и Админов
@@ -101,6 +111,10 @@ func main() {
 				case "send_stages_text":
 					fallthrough
 				case "sst":
+					for _, user := range config.CUSTOMERS {
+						myBot.DeleteMessegeByIds(user.UserChat_id, stl.CreateSliceInt(user.LastMessageId-50, user.LastMessageId+50))
+						myBot.SendMsgById(user.UserChat_id, myBot.Stage.StageName, myBot.Stage.StagesText)
+					}
 					myBot.SendMsgById(int64(config.MODERATOR_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
 					myBot.SendMsgById(int64(config.PUBLIC_BOT_CHAT), myBot.Stage.StageName, myBot.Stage.StagesText)
 					continue
@@ -163,6 +177,7 @@ func main() {
 				case "sq":
 					if myBot.Stage.StageType == 2 {
 						for _, user := range config.CUSTOMERS {
+							myBot.DeleteMessegeByIds(user.UserChat_id, stl.CreateSliceInt(user.LastMessageId-50, user.LastMessageId+50))
 							myBot.SendMsgWithInleneKeyboardById(
 								user.UserChat_id,
 								model.BotQuestions.GetCurentQuestion().Markup,
@@ -226,8 +241,7 @@ func main() {
 					switch {
 					case model.BotQuestions.QuestionsList.IsExistQuestionOptionsByName(update.CallbackQuery.Message.Text, "gender"):
 						config.CUSTOMERS.FindUserByIdSetGender(update.CallbackQuery.From.ID, update.CallbackQuery.Data)
-						myBot.SendMsgById(update.CallbackQuery.From.ID, "Отлично, теперь мы знаем какого ты поля.")
-						myBot.SendMsgById(update.CallbackQuery.From.ID, config.CUSTOMERS.FindUserById(update.CallbackQuery.From.ID).Answers...)
+						myBot.SendMsgById(update.CallbackQuery.From.ID, "Отлично, теперь мы знаем какого ты пола.")
 						continue
 
 					case model.BotQuestions.QuestionsList.IsExistQuestionOptionsByName(update.CallbackQuery.Message.Text, "onlyOne"):
@@ -237,13 +251,11 @@ func main() {
 							model.BotQuestions.QuestionsList.GetAnswersByQuestionName(update.CallbackQuery.Message.Text),
 							update.CallbackQuery.Data)
 						myBot.SendMsgById(update.CallbackQuery.From.ID, "Отлично, Можешь изменить ответ если хочешь.")
-						myBot.SendMsgById(update.CallbackQuery.From.ID, config.CUSTOMERS.FindUserById(update.CallbackQuery.From.ID).Answers...)
 						continue
 
 					default:
 						config.CUSTOMERS.FindUserByIdAndAddAnswer(update.CallbackQuery.From.ID, update.CallbackQuery.Data)
 						myBot.SendMsgById(update.CallbackQuery.From.ID, "Отлично, На этот вопрос можно ответить несколько раз, Выбирай хоть все варианты.")
-						myBot.SendMsgById(update.CallbackQuery.From.ID, config.CUSTOMERS.FindUserById(update.CallbackQuery.From.ID).Answers...)
 						continue
 					}
 				}

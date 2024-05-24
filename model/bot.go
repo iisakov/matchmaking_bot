@@ -42,10 +42,10 @@ func (tgb TgBot) SendMsgWithInleneKeyboardById(chatId int64, inleneKeyboard tgbo
 	tgb.Bot.Send(msg)
 }
 
-func (tgb TgBot) DeleteMessegeById(chat_id, message_id int) (resp *http.Response, err error) {
+func (tgb TgBot) DeleteMessegeById(chat_id int64, message_id int) (resp *http.Response, err error) {
 	type DM struct {
-		Chat_id    int `json:"chat_id"`
-		Message_id int `json:"message_id"`
+		Chat_id    int64 `json:"chat_id"`
+		Message_id int   `json:"message_id"`
 	}
 
 	data, err := json.Marshal(DM{Chat_id: chat_id, Message_id: message_id})
@@ -61,12 +61,11 @@ func (tgb TgBot) DeleteMessegeById(chat_id, message_id int) (resp *http.Response
 	return
 }
 
-func (tgb TgBot) DeleteMessegeByIds(chat_id int, message_ids []int) (result string, err error) {
+func (tgb TgBot) DeleteMessegeByIds(chat_id int64, message_ids []int) (result string, err error) {
 	type DM struct {
-		Chat_id     int   `json:"chat_id"`
+		Chat_id     int64 `json:"chat_id"`
 		Message_ids []int `json:"message_ids"`
 	}
-	fmt.Println(message_ids)
 	data, err := json.Marshal(DM{Chat_id: chat_id, Message_ids: message_ids})
 	if err != nil {
 		return
@@ -83,6 +82,7 @@ func (tgb TgBot) DeleteMessegeByIds(chat_id int, message_ids []int) (result stri
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println(string(bodyBytes))
 	result = string(bodyBytes)
 
 	return
