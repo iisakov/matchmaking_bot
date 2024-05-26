@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"log"
 	"matchmaking_bot/config"
-	"matchmaking_bot/mock"
 	"matchmaking_bot/model"
 	"matchmaking_bot/stl"
 	"os"
 	"strconv"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/iisakov/telegram-bot-api"
 	"github.com/joho/godotenv"
 )
 
@@ -24,7 +23,7 @@ func init() {
 }
 
 func main() {
-	config.CUSTOMERS = mock.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
+	// config.CUSTOMERS = mock.MockUsers(config.CUSTOMERS) // моковые пользователи для проверки
 	// config.PAIRS = mock.MockPairs(config.PAIRS)         // моковые пары для проверки
 
 	bot, err := tgbotapi.NewBotAPI(config.TOKEN)

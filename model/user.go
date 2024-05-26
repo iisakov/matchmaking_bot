@@ -6,7 +6,7 @@ import (
 	"matchmaking_bot/stl"
 	"strconv"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/iisakov/telegram-bot-api"
 )
 
 type User struct {

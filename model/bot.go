@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/iisakov/telegram-bot-api"
 )
 
 var tgHostUrl = "https://api.telegram.org/bot"
