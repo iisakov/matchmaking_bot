@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"matchmaking_bot/stl"
 	"net/http"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/iisakov/telegram-bot-api"
 )
 
 var tgHostUrl = "https://api.telegram.org/bot"
@@ -32,6 +33,11 @@ func (tgb TgBot) SendMsgById(chatId int64, msgText ...string) {
 	tgb.Bot.Send(msg)
 }
 
+func (tgb TgBot) SendMsgByIdAndDeleteOtherMsg(chatId int64, msgId int, msgText ...string) {
+	tgb.SendMsgById(chatId, msgText...)
+	tgb.DeleteMessegeByIds(chatId, stl.CreateSlicePositiveInt(msgId-50, msgId))
+}
+
 func (tgb TgBot) SendMsgWithInleneKeyboardById(chatId int64, inleneKeyboard tgbotapi.InlineKeyboardMarkup, msgText ...string) {
 	text := ""
 	for _, t := range msgText {
@@ -39,6 +45,16 @@ func (tgb TgBot) SendMsgWithInleneKeyboardById(chatId int64, inleneKeyboard tgbo
 	}
 	msg := tgbotapi.NewMessage(chatId, text)
 	msg.ReplyMarkup = inleneKeyboard
+	tgb.Bot.Send(msg)
+}
+
+func (tgb TgBot) SendMsgWithKeyboardById(chatId int64, keyboard tgbotapi.ReplyKeyboardMarkup, msgText ...string) {
+	text := ""
+	for _, t := range msgText {
+		text = text + "\n" + t
+	}
+	msg := tgbotapi.NewMessage(chatId, text)
+	msg.ReplyMarkup = keyboard
 	tgb.Bot.Send(msg)
 }
 

@@ -6,26 +6,26 @@ import (
 	"matchmaking_bot/stl"
 	"strconv"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	tgbotapi "github.com/iisakov/telegram-bot-api"
 )
 
 type User struct {
-	UserId        int64
-	UserChat_id   int64
-	UserRole      Role
-	UserLogin     string
-	UserAlias     string
-	Answers       []string
-	Gender        int
-	LastMessageId int
+	UserId        int64    `json:"userId"`
+	UserChat_id   int64    `json:"userChatId"`
+	UserRole      Role     `json:"userRole"`
+	UserLogin     string   `json:"userLogin"`
+	UserAlias     string   `json:"userAlias"`
+	Answers       []string `json:"Answers"`
+	Gender        int      `json:"Gender"`
+	LastMessageId int      `json:"LastMessageId"`
 }
 
-func NewUser(update tgbotapi.Update) User {
-	return User{UserId: update.Message.From.ID,
-		UserChat_id: update.Message.Chat.ID,
+func NewUser(um tgbotapi.Message) User {
+	return User{UserId: um.From.ID,
+		UserChat_id: um.Chat.ID,
 		UserRole:    Role{RoleName: "Клиент", RoleType: 1},
-		UserLogin:   update.Message.From.UserName,
-		UserAlias:   update.Message.Text}
+		UserLogin:   um.From.UserName,
+		UserAlias:   um.Text}
 }
 
 type Users []User
@@ -148,8 +148,8 @@ func (u User) FindAnswer(answer string) bool {
 }
 
 type Role struct {
-	RoleName string
-	RoleType int
+	RoleName string `json:"roleName"`
+	RoleType int    `json:"roleType"`
 }
 
 type Pair struct {
