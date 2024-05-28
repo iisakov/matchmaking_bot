@@ -10,14 +10,14 @@ import (
 )
 
 type User struct {
-	UserId        int64
-	UserChat_id   int64
-	UserRole      Role
-	UserLogin     string
-	UserAlias     string
-	Answers       []string
-	Gender        int
-	LastMessageId int
+	UserId        int64    `json:"userId"`
+	UserChat_id   int64    `json:"userChatId"`
+	UserRole      Role     `json:"userRole"`
+	UserLogin     string   `json:"userLogin"`
+	UserAlias     string   `json:"userAlias"`
+	Answers       []string `json:"Answers"`
+	Gender        int      `json:"Gender"`
+	LastMessageId int      `json:"LastMessageId"`
 }
 
 func NewUser(um tgbotapi.Message) User {
@@ -148,8 +148,8 @@ func (u User) FindAnswer(answer string) bool {
 }
 
 type Role struct {
-	RoleName string
-	RoleType int
+	RoleName string `json:"roleName"`
+	RoleType int    `json:"roleType"`
 }
 
 type Pair struct {

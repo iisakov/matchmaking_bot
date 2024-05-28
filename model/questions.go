@@ -38,9 +38,10 @@ func (q *Questions) Next() (Questions, error) {
 }
 
 type Question struct {
-	Text    string
-	Markup  tgbotapi.InlineKeyboardMarkup
-	Options []string
+	Text     string
+	Markup   tgbotapi.InlineKeyboardMarkup
+	Keyboard tgbotapi.ReplyKeyboardMarkup
+	Options  []string
 }
 
 func (q Question) GetAnswers() (result []string) {
@@ -101,7 +102,7 @@ var RowQuestion = map[string]map[string][]string{
 		"options": {"onlyOne"}},
 }
 
-func CreateQuestions(rowQuestion map[string]map[string][]string) (result QuestionsList) {
+func CreateQuestionsWithInlineKeyboard(rowQuestion map[string]map[string][]string) (result QuestionsList) {
 	for questionText, answerValue := range rowQuestion {
 		var rows [][]tgbotapi.InlineKeyboardButton
 
@@ -114,4 +115,18 @@ func CreateQuestions(rowQuestion map[string]map[string][]string) (result Questio
 	return
 }
 
-var BotQuestions Questions = Questions{QuestionsCounter: 0, QuestionsList: CreateQuestions(RowQuestion)}
+func CreateQuestionsWithKeyboard(rowQuestion map[string]map[string][]string) (result QuestionsList) {
+	for questionText, answerValue := range rowQuestion {
+		var rows [][]tgbotapi.KeyboardButton
+
+		for _, a := range answerValue["answers"] {
+			rows = append(rows, tgbotapi.NewKeyboardButtonRow(tgbotapi.NewKeyboardButton(a)))
+		}
+		keyboardMarkup := tgbotapi.NewReplyKeyboard(rows...)
+		result = append(result, Question{Text: questionText, Keyboard: keyboardMarkup, Options: answerValue["options"]})
+	}
+	return
+}
+
+var BotQuestions Questions = Questions{QuestionsCounter: 0, QuestionsList: CreateQuestionsWithInlineKeyboard(RowQuestion)}
+var BotQuestionsK Questions = Questions{QuestionsCounter: 0, QuestionsList: CreateQuestionsWithKeyboard(RowQuestion)}

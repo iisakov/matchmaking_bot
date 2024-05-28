@@ -17,8 +17,13 @@ func init() {
 		log.Fatal("Не найден файл .env")
 	}
 	config.TOKEN = os.Getenv("MATCHMAKER_BOT_TOKEN")
-	config.PUBLIC_BOT_CHAT, _ = strconv.Atoi(os.Getenv("PUBLIC_BOT_CHAT"))
-	config.MODERATOR_BOT_CHAT, _ = strconv.Atoi(os.Getenv("MODERATOR_BOT_CHAT"))
+	var n int
+	n, _ = strconv.Atoi(os.Getenv("PUBLIC_BOT_CHAT"))
+	config.PUBLIC_BOT_CHAT = int64(n)
+	n, _ = strconv.Atoi(os.Getenv("MODERATOR_BOT_CHAT"))
+	config.MODERATOR_BOT_CHAT = int64(n)
+
+	config.ReadBackup("backupCustomers.json")
 }
 
 func main() {
@@ -29,13 +34,12 @@ func main() {
 	}
 	myBot := model.NewTgBot(bot)
 
-	myBot.Bot.Debug = false
+	myBot.Bot.Debug = true
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
 	updates := myBot.Bot.GetUpdatesChan(u)
-
 	for update := range updates {
 		// Приватные сообщения от пользователей
 		if update.Message != nil {
@@ -46,7 +50,7 @@ func main() {
 			}
 		}
 
-		// Сообщения от Модераторов и Админов
+		// Сообщения от из каналов
 		if update.ChannelPost != nil {
 			if !update.ChannelPost.IsCommand() {
 				tgstl.HandleChannelPostText(*update.ChannelPost, myBot)
@@ -55,8 +59,12 @@ func main() {
 			}
 		}
 
+		// Информация из инлайн клавиатуры
 		if update.CallbackQuery != nil {
 			tgstl.HandleCallbackQuery(*update.CallbackQuery, myBot)
 		}
+
+		config.CreateBackup("backupCustomers.json")
 	}
+
 }
