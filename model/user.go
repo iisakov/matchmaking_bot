@@ -20,12 +20,12 @@ type User struct {
 	LastMessageId int
 }
 
-func NewUser(update tgbotapi.Update) User {
-	return User{UserId: update.Message.From.ID,
-		UserChat_id: update.Message.Chat.ID,
+func NewUser(um tgbotapi.Message) User {
+	return User{UserId: um.From.ID,
+		UserChat_id: um.Chat.ID,
 		UserRole:    Role{RoleName: "Клиент", RoleType: 1},
-		UserLogin:   update.Message.From.UserName,
-		UserAlias:   update.Message.Text}
+		UserLogin:   um.From.UserName,
+		UserAlias:   um.Text}
 }
 
 type Users []User
