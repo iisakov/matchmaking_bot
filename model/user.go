@@ -30,6 +30,9 @@ func NewUser(um tgbotapi.Message) User {
 
 type Users []User
 
+func (u Users) CreateBackup() {}
+func (u Users) ReadBackup()   {}
+
 func (us Users) GetUsers() (result string) {
 	result = ""
 	for _, u := range us {
@@ -180,6 +183,9 @@ func IsExistUserInPairs(pairs Pairs, user User) bool {
 }
 
 type Pairs []Pair
+
+func (p Pairs) CreateBackup() {}
+func (p Pairs) ReadBackup()   {}
 
 func (ps Pairs) GetConversationPartner(uId int64) (result int64, ok bool) {
 	for _, p := range ps {

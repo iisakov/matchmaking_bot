@@ -23,7 +23,7 @@ func init() {
 	n, _ = strconv.Atoi(os.Getenv("MODERATOR_BOT_CHAT"))
 	config.MODERATOR_BOT_CHAT = int64(n)
 
-	config.ReadBackup("backupCustomers.json")
+	config.ReadBackup()
 }
 
 func main() {
@@ -64,7 +64,7 @@ func main() {
 			tgstl.HandleCallbackQuery(*update.CallbackQuery, myBot)
 		}
 
-		config.CreateBackup("backupCustomers.json")
+		config.CreateBackup()
 	}
 
 }
