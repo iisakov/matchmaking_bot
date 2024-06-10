@@ -23,11 +23,10 @@ func init() {
 	n, _ = strconv.Atoi(os.Getenv("MODERATOR_BOT_CHAT"))
 	config.MODERATOR_BOT_CHAT = int64(n)
 
-	config.ReadBackup("backupCustomers.json")
+	config.ReadBackup()
 }
 
 func main() {
-
 	bot, err := tgbotapi.NewBotAPI(config.TOKEN)
 	if err != nil {
 		log.Panic(err)
@@ -46,7 +45,7 @@ func main() {
 			if !update.Message.IsCommand() {
 				tgstl.HandleMessagesText(*update.Message, myBot)
 			} else {
-				tgstl.HandleMessageCommands(*update.Message, myBot)
+				myBot = tgstl.HandleMessageCommands(*update.Message, myBot)
 			}
 		}
 
@@ -64,7 +63,7 @@ func main() {
 			tgstl.HandleCallbackQuery(*update.CallbackQuery, myBot)
 		}
 
-		config.CreateBackup("backupCustomers.json")
+		config.CreateBackup()
 	}
 
 }

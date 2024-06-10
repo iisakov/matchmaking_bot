@@ -38,6 +38,11 @@ func (tgb TgBot) SendMsgByIdAndDeleteOtherMsg(chatId int64, msgId int, msgText .
 	tgb.DeleteMessegeByIds(chatId, stl.CreateSlicePositiveInt(msgId-50, msgId))
 }
 
+func (tgb TgBot) SendMsgWithKeyboardByIdAndDeleteOtherMsg(chatId int64, keyboard tgbotapi.ReplyKeyboardMarkup, msgId int, msgText ...string) {
+	tgb.SendMsgWithKeyboardById(chatId, keyboard, msgText...)
+	tgb.DeleteMessegeByIds(chatId, stl.CreateSlicePositiveInt(msgId-50, msgId))
+}
+
 func (tgb TgBot) SendMsgWithInleneKeyboardById(chatId int64, inleneKeyboard tgbotapi.InlineKeyboardMarkup, msgText ...string) {
 	text := ""
 	for _, t := range msgText {
@@ -101,6 +106,7 @@ func (tgb TgBot) DeleteMessegeByIds(chat_id int64, message_ids []int) (result st
 	fmt.Println(string(bodyBytes))
 	result = string(bodyBytes)
 
+	fmt.Println(result)
 	return
 }
 

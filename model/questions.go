@@ -1,7 +1,9 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
 
 	tgbotapi "github.com/iisakov/telegram-bot-api"
 )
@@ -81,25 +83,18 @@ func (qs QuestionsList) GetAnswersByQuestionName(questionName string) []string {
 	return qs.FindQuestionByName(questionName).GetAnswers()
 }
 
-var RowQuestion = map[string]map[string][]string{
-	"Выберите свой пол": {
-		"answers": {"Юноша", "Девушка"},
-		"options": {"gender"}},
-	"Что вы любите читать? Можно выбрать несколько ответов.": {
-		"answers": {"романы", "детективы", "лента инстаграмма", "этикетки"},
-		"options": {""}},
-	"Какой отдых для вас самый лучший?": {
-		"answers": {"на море", "горы", "деревня", "дома полежать/не выходить из дома"},
-		"options": {"onlyOne"}},
-	"Сколько времени в день вы уделяете работе/учебе?": {
-		"answers": {"8 часов", "10 часов", "2-3 часа", "не могу ответить"},
-		"options": {"onlyOne"}},
-	"Через какое время вы ответите на сообщение вашего партнера?": {
-		"answers": {"сразу же", "когда закончу свои дела", "перезвоню", "если важно отвечу сразу"},
-		"options": {"onlyOne"}},
-	"Кто из родителей занимался домашними обязанностями": {
-		"answers": {"мужчина", "женщина", "оба", "наняли помощницу"},
-		"options": {"onlyOne"}},
+func LoadQuestionsOnFile(fo string) (result map[string]map[string][]string) {
+	f, err := os.ReadFile(fo)
+	if err != nil {
+		panic(err)
+	}
+
+	err = json.Unmarshal(f, &result)
+	if err != nil {
+		panic(err)
+	}
+
+	return
 }
 
 func CreateQuestionsWithInlineKeyboard(rowQuestion map[string]map[string][]string) (result QuestionsList) {
@@ -128,5 +123,5 @@ func CreateQuestionsWithKeyboard(rowQuestion map[string]map[string][]string) (re
 	return
 }
 
-var BotQuestions Questions = Questions{QuestionsCounter: 0, QuestionsList: CreateQuestionsWithInlineKeyboard(RowQuestion)}
-var BotQuestionsK Questions = Questions{QuestionsCounter: 0, QuestionsList: CreateQuestionsWithKeyboard(RowQuestion)}
+var BotQuestions Questions = Questions{QuestionsCounter: 0, QuestionsList: CreateQuestionsWithInlineKeyboard(LoadQuestionsOnFile("questions.json"))}
+var BotQuestionsK Questions = Questions{QuestionsCounter: 0, QuestionsList: CreateQuestionsWithKeyboard(LoadQuestionsOnFile("questions.json"))}

@@ -10,6 +10,17 @@ import (
 
 func HandleMessagesText(um tgbotapi.Message, b model.TgBot) {
 	switch b.Stage.StageType {
+	case 0: // Настройка
+		if !config.MODERATORS.IsExistUserById(um.From.ID) {
+			nu := model.NewUser(um)
+			nu.UserRole.RoleName = "Модератор"
+			nu.UserRole.RoleType = 2
+			config.MODERATORS = append(config.MODERATORS, nu)
+		}
+		if config.MODERATORS.IsExistUserById(um.From.ID) {
+			b.SendMsgWithKeyboardById(um.From.ID, model.C[b.Stage.StageType].Keyboard, model.C[b.Stage.StageType].Text)
+		}
+
 	case 1: // Регистрация
 		if !config.CUSTOMERS.IsExistUserById(um.From.ID) {
 			config.CUSTOMERS = append(config.CUSTOMERS, model.NewUser(um))
@@ -46,16 +57,21 @@ func HandleMessagesText(um tgbotapi.Message, b model.TgBot) {
 
 func HandleChannelPostText(um tgbotapi.Message, b model.TgBot) {
 	if um.SenderChat.ID == config.MODERATOR_BOT_CHAT {
-		b.SendMsgById(
-			config.PUBLIC_BOT_CHAT,
-			fmt.Sprintf("Сообщение от команды [by_artisan]: %s", um.Text))
-		for _, user := range config.CUSTOMERS {
+		switch b.Stage.StageType {
+
+		default:
 			b.SendMsgById(
-				user.UserChat_id,
+				config.PUBLIC_BOT_CHAT,
 				fmt.Sprintf("Сообщение от команды [by_artisan]: %s", um.Text))
-			b.SendMsgById(
-				config.MODERATOR_BOT_CHAT,
-				fmt.Sprintf("Пользователю: %s, он же %s, Отправлено сообщение", user.UserLogin, user.UserAlias))
+			for _, user := range config.CUSTOMERS {
+				b.SendMsgById(
+					user.UserChat_id,
+					fmt.Sprintf("Сообщение от команды [by_artisan]: %s", um.Text))
+				b.SendMsgById(
+					config.MODERATOR_BOT_CHAT,
+					fmt.Sprintf("Пользователю: %s, он же %s, Отправлено сообщение", user.UserLogin, user.UserAlias))
+			}
 		}
+
 	}
 }
